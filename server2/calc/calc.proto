@@ -14,4 +14,4 @@ message CalculateResponse {
 
 service CalculateService {
     rpc Calculate(CalculateRequest) returns (CalculateResponse);
-}
+} 

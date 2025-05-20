@@ -1,13 +1,15 @@
 package main
 
 import (
-	"calc/calc"
 	"context"
 	"fmt"
 	"log"
 	"net"
+	"server1/calc"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type server struct {
@@ -15,43 +17,47 @@ type server struct {
 }
 
 func (s *server) Calculate(ctx context.Context, req *calc.CalculateRequest) (*calc.CalculateResponse, error) {
-	a := req.A
-	b := req.B
-	opr := req.Opr
+	log.Printf("Server1 received calculation request: %d %s %d", req.A, req.Opr, req.B)
 
-	var result int32
+	// Connect to server2
+	server2Addr := "localhost:50052"
+	conn, err := grpc.DialContext(ctx, server2Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to server2: %v", err)
+		return nil, fmt.Errorf("failed to connect to calculation service: %v", err)
+	}
+	defer conn.Close()
 
-	switch opr {
-	case "+":
-		result = a + b
-	case "-":
-		result = a - b
-	case "*":
-		result = a * b
-	case "/":
-		result = a / b
+	// Create client
+	client := calc.NewCalculateServiceClient(conn)
+
+	// Set timeout for the request
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// Forward the request to server2
+	response, err := client.Calculate(ctx, req)
+	if err != nil {
+		log.Printf("Error from server2: %v", err)
+		return nil, err
 	}
 
-	return &calc.CalculateResponse{Result: result}, nil
+	log.Printf("Server1 received result from server2: %d", response.Result)
+	return response, nil
 }
 
-func createServer() {
-	opts := []grpc.ServerOption{}
-	s := grpc.NewServer(opts...)
-	calc.RegisterCalculateServiceServer(s, &server{})
-
-	lis, err := net.Listen("tcp", ":50051")
-
-	fmt.Println("Starting server on port: 50051")
-
+func main() {
+	port := ":50051"
+	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s.Serve(lis)
-}
+	s := grpc.NewServer()
+	calc.RegisterCalculateServiceServer(s, &server{})
 
-func main() {
-	fmt.Println("Welcome to my the calculator!")
-	createServer()
+	fmt.Printf("Server1 started on port%s, will delegate calculations to server2\n", port)
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
