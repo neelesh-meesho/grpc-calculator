@@ -35,9 +35,26 @@ This project demonstrates a simple gRPC setup with two servers:
 
 ## Testing
 
-You can use a gRPC client like `grpcurl` or write a simple client application to test the service.
+### With Postman
 
-Example with grpcurl:
+1. Open Postman and create a new gRPC request
+2. Set the server URL to `localhost:50051`
+3. In Method Selection:
+   - Select "main.CalculateService/Calculate" from the service definition
+   - If importing proto file is required, use the proto file from `server1/calc/calc.proto`
+4. In Message section, use this JSON format:
+   ```json
+   {
+     "a": 10,
+     "opr": "+",
+     "b": 5
+   }
+   ```
+5. Click "Invoke" to send the request
+
+### With grpcurl
+
+You can also use tools like `grpcurl` to test the service:
 ```bash
 grpcurl -plaintext -d '{"a": 10, "opr": "+", "b": 5}' localhost:50051 main.CalculateService/Calculate
 ```
