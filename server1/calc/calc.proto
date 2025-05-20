@@ -1,0 +1,18 @@
+syntax = "proto3";
+package main;
+option go_package = "/calc";
+
+
+message CalculateRequest {
+    int32 a = 1;
+    string opr = 2;
+    int32 b = 3;
+}
+
+message CalculateResponse {
+    int32 result = 1;
+}
+
+service CalculateService {
+    rpc Calculate(CalculateRequest) returns (CalculateResponse);
+}
