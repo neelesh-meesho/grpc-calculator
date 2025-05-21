@@ -4,7 +4,7 @@ This project demonstrates a simple gRPC setup with two servers:
 - `server2` - Performs the actual calculations
 - `server1` - Acts as an intermediary that forwards requests to `server2`
 
-## Setup
+## Prerequisites
 
 1. Install necessary tools:
    ```bash
@@ -17,21 +17,47 @@ This project demonstrates a simple gRPC setup with two servers:
    export PATH=$PATH:$(go env GOPATH)/bin
    ```
 
-## Running the application
+## Building and Running
 
-1. Start server2 (calculation service) first:
-   ```bash
-   cd server2
-   go run main.go
-   ```
+This project uses a Makefile to simplify the build and run process. Here are the main commands:
 
-2. In a new terminal, start server1:
-   ```bash
-   cd server1
-   go run main.go
-   ```
+### Build the Project
 
-3. Now you can send gRPC requests to server1 on port 50051, and it will forward them to server2 on port 50052.
+```bash
+# Initialize, generate code, and build both servers
+make all
+```
+
+### Run the Servers
+
+```bash
+# Run both servers in the background (in a single terminal)
+make run-servers
+
+# Or run each server individually (in separate terminals)
+make run-server1  # first terminal
+make run-server2  # second terminal
+```
+
+### Clean Up
+
+```bash
+# Stop all running servers and clean generated files
+make clean
+```
+
+### Other Useful Commands
+
+```bash
+# Generate protobuf code
+make generate
+
+# Build executables only
+make build
+
+# Stop any running servers
+make kill-servers
+```
 
 ## Testing
 
@@ -64,4 +90,6 @@ grpcurl -plaintext -d '{"a": 10, "opr": "+", "b": 5}' localhost:50051 main.Calcu
 - `server1/calc/calc.proto` - Protocol buffer definition
 - `server1/main.go` - Server1 implementation that forwards requests to server2
 - `server2/calc/calc.proto` - Same protocol buffer definition
-- `server2/main.go` - Server2 implementation that performs calculations 
+- `server2/main.go` - Server2 implementation that performs calculations
+- `Makefile` - Build automation
+- `bin/` - Output directory for binaries 
