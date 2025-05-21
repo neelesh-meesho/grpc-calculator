@@ -15,12 +15,26 @@ BIN_DIR = bin
 PROTOC_GEN_GO = /Users/neeleshpandey/go/bin/protoc-gen-go
 PROTOC_GEN_GO_GRPC = /Users/neeleshpandey/go/bin/protoc-gen-go-grpc
 
+# Server port numbers
+SERVER1_PORT = 50051
+SERVER2_PORT = 50052
+
 # === TARGETS ===
 
-# Kill any running servers
-kill-servers:
-	@echo "🛑 Stopping any running servers..."
+# Kill all servers
+kill-all-servers:
+	@echo "🛑 Stopping all running servers..."
 	@-pkill -f bin/server || true
+
+# Kill server1 if running
+kill-server1:
+	@echo "🛑 Stopping server1 if running..."
+	@-pkill -f bin/server1 || true
+
+# Kill server2 if running
+kill-server2:
+	@echo "🛑 Stopping server2 if running..."
+	@-pkill -f bin/server2 || true
 
 # Generate gRPC code for server1
 generate-server1:
@@ -61,24 +75,32 @@ build-server2: generate-server2
 build: build-server1 build-server2
 
 # Run server1
-run-server1: build-server1 kill-servers
+run-server1: build-server1 kill-server1
 	@echo "🚀 Running server1..."
 	./$(BIN_DIR)/server1
 
 # Run server2
-run-server2: build-server2 kill-servers
+run-server2: build-server2 kill-server2
 	@echo "🚀 Running server2..."
 	./$(BIN_DIR)/server2
 
 # Run both servers in background
-run-servers: build kill-servers
+run-servers: build kill-all-servers
 	@echo "🚀 Starting both servers in background..."
 	@./$(BIN_DIR)/server1 &
 	@./$(BIN_DIR)/server2 &
 	@echo "✅ Both servers are running."
 
+# Check if servers are running
+check-servers:
+	@echo "📊 Checking server status..."
+	@echo "Server1 (port $(SERVER1_PORT)):"
+	@-lsof -i:$(SERVER1_PORT) || echo "Not running"
+	@echo "Server2 (port $(SERVER2_PORT)):"
+	@-lsof -i:$(SERVER2_PORT) || echo "Not running"
+
 # Clean generated files and binaries
-clean: kill-servers
+clean: kill-all-servers
 	@echo "🧹 Cleaning generated files and binaries..."
 	rm -rf $(BIN_DIR)
 	find server1/calc -name '*.pb.go' -delete
@@ -89,6 +111,34 @@ init:
 	@echo "🛠️ Creating necessary directories..."
 	mkdir -p $(BIN_DIR)
 
+# === TESTING TARGETS ===
+
+# Run tests for server1
+test-server1: generate-server1
+	@echo "🧪 Running tests for server1..."
+	cd server1 && go test -v ./...
+
+# Run tests for server2
+test-server2: generate-server2
+	@echo "🧪 Running tests for server2..."
+	cd server2 && go test -v ./...
+
+# Run all tests
+test: test-server1 test-server2
+	@echo "✅ All tests completed"
+
+# Run tests with coverage
+test-coverage: generate
+	@echo "🧪 Running tests with coverage..."
+	cd server1 && go test -v -coverprofile=../coverage-server1.out ./...
+	cd server2 && go test -v -coverprofile=../coverage-server2.out ./...
+	echo "mode: set" > coverage.out
+	tail -n +2 coverage-server1.out >> coverage.out
+	tail -n +2 coverage-server2.out >> coverage.out
+	rm coverage-server1.out coverage-server2.out
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Coverage report generated in coverage.html"
+
 # === ONE-COMMAND TO DO IT ALL ===
 
 all: init generate build
@@ -98,4 +148,6 @@ all: init generate build
 	@echo "  - Separate terminals: make run-server1 and make run-server2"
 
 .PHONY: generate generate-server1 generate-server2 build build-server1 build-server2 \
-	run-server1 run-server2 run-servers clean init all kill-servers
+	run-server1 run-server2 run-servers clean init all \
+	kill-all-servers kill-server1 kill-server2 check-servers \
+	test test-server1 test-server2 test-coverage

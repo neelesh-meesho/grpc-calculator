@@ -30,13 +30,36 @@ make all
 
 ### Run the Servers
 
+You can run the servers in different ways:
+
 ```bash
 # Run both servers in the background (in a single terminal)
 make run-servers
 
 # Or run each server individually (in separate terminals)
-make run-server1  # first terminal
-make run-server2  # second terminal
+# Each server can run independently without stopping the other
+make run-server1  # in first terminal
+make run-server2  # in second terminal
+```
+
+### Check Server Status
+
+```bash
+# Check if servers are running and which ports they're using
+make check-servers
+```
+
+### Stopping Servers
+
+```bash
+# Stop all running servers
+make kill-all-servers
+
+# Stop only server1
+make kill-server1
+
+# Stop only server2
+make kill-server2
 ```
 
 ### Clean Up
@@ -54,12 +77,29 @@ make generate
 
 # Build executables only
 make build
-
-# Stop any running servers
-make kill-servers
 ```
 
-## Testing
+## Unit Tests
+
+The project includes unit tests for both server implementations:
+
+```bash
+# Run all tests
+make test
+
+# Run tests for only server1
+make test-server1
+
+# Run tests for only server2
+make test-server2
+
+# Run tests with code coverage
+make test-coverage
+```
+
+The coverage report will be generated as an HTML file (`coverage.html`) that you can open in a browser.
+
+## Testing the Service
 
 ### With Postman
 
@@ -89,7 +129,9 @@ grpcurl -plaintext -d '{"a": 10, "opr": "+", "b": 5}' localhost:50051 main.Calcu
 
 - `server1/calc/calc.proto` - Protocol buffer definition
 - `server1/main.go` - Server1 implementation that forwards requests to server2
+- `server1/server_test.go` - Unit tests for server1
 - `server2/calc/calc.proto` - Same protocol buffer definition
 - `server2/main.go` - Server2 implementation that performs calculations
+- `server2/calculator_test.go` - Unit tests for server2
 - `Makefile` - Build automation
 - `bin/` - Output directory for binaries 
